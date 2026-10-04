@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ловци на прости числа - Решетото на Ератостен</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0f19',
+                        cardBg: '#131b2e',
+                        glowBlue: '#00d2ff',
+                        glowGreen: '#00ff87',
+                        glowOrange: '#ff9900',
+                        glowPurple: '#b000ff',
+                        glowGold: '#ffd700',
+                        glowRed: '#ff2a6d'
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        arcade: ['"Press Start 2P"', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f1f5f9;
+            font-family: 'Outfit', sans-serif;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(0, 210, 255, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(176, 0, 255, 0.08) 0%, transparent 40%);
+            min-height: 100vh;
+        }
+
+        /* Neon Glow Effects */
+        .glow-box-blue { box-shadow: 0 0 15px rgba(0, 210, 255, 0.5), inset 0 0 10px rgba(0, 210, 255, 0.3); border-color: #00d2ff; }
+        .glow-box-green { box-shadow: 0 0 15px rgba(0, 255, 135, 0.5), inset 0 0 10px rgba(0, 255, 135, 0.3); border-color: #00ff87; }
+        .glow-box-orange { box-shadow: 0 0 15px rgba(255, 153, 0, 0.5), inset 0 0 10px rgba(255, 153, 0, 0.3); border-color: #ff9900; }
+        .glow-box-purple { box-shadow: 0 0 15px rgba(176, 0, 255, 0.5), inset 0 0 10px rgba(176, 0, 255, 0.3); border-color: #b000ff; }
+        .glow-box-gold { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), inset 0 0 12px rgba(255, 215, 0, 0.5); border-color: #ffd700; }
+        .glow-box-red { box-shadow: 0 0 15px rgba(255, 42, 109, 0.6); border-color: #ff2a6d; }
+
+        .glow-text-gold { text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.5); }
+        .glow-text-blue { text-shadow: 0 0 8px rgba(0, 210, 255, 0.8); }
+
+        /* Grid Tile States */
+        .tile {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .tile:hover:not(.eliminated):not(.disabled) {
+            transform: scale(1.08);
+            z-index: 10;
+        }
+
+        .tile:active:not(.disabled) {
+            transform: scale(0.95);
+        }
+
+        .tile.eliminated {
+            opacity: 0.25;
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+            color: #64748b !important;
+            text-decoration: line-through;
+            transform: scale(0.92);
+            box-shadow: none !important;
+        }
+
+        .tile.prime-2 { background-color: rgba(0, 210, 255, 0.25); border-color: #00d2ff; color: #00d2ff; font-weight: bold; }
+        .tile.prime-3 { background-color: rgba(0, 255, 135, 0.25); border-color: #00ff87; color: #00ff87; font-weight: bold; }
+        .tile.prime-5 { background-color: rgba(255, 153, 0, 0.25); border-color: #ff9900; color: #ff9900; font-weight: bold; }
+        .tile.prime-7 { background-color: rgba(176, 0, 255, 0.25); border-color: #b000ff; color: #b000ff; font-weight: bold; }
+        
+        .tile.prime-final { 
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 140, 0, 0.3)); 
+            border-color: #ffd700; 
+            color: #fff; 
+            font-weight: 900;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            animation: pulse-gold 2s infinite alternate;
+        }
+
+        .tile.arcade-active {
+            background-color: #00d2ff !important;
+            color: #0b0f19 !important;
+            font-weight: 900;
+            box-shadow: 0 0 25px #00d2ff, 0 0 50px #00d2ff !important;
+            transform: scale(1.15) !important;
+            z-index: 20;
+        }
+
+        .tile.shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        @keyframes pulse-gold {
+            0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+            100% { box-shadow: 0 0 22px rgba(255, 215, 0, 0.9); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0b0f19; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between p-2 sm:p-4 min-h-screen">
+
+    <!-- Top Header -->
+    <header class="w-full max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-3 bg-cardBg/80 backdrop-blur border border-slate-800 p-3 sm:p-4 rounded-2xl mb-4 shadow-xl">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center font-bold text-xl sm:text-2xl text-white shadow-lg shadow-cyan-500/30">
+                №
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400">
+                    ЛОВЦИ НА ПРОСТИ ЧИСЛА
+                </h1>
+                <p class="text-xs sm:text-sm text-slate-400 font-medium">Решетото на Ератостен • 5. клас</p>
+            </div>
+        </div>
+
+        <!-- Mode Selector -->
+        <div class="flex bg-slate-900/90 p-1 rounded-xl border border-slate-700/60 w-full sm:w-auto">
+            <button id="btn-mode-sieve" onclick="switchMode('sieve')" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20">
+                📘 Обучение (Решето)
+            </button>
+            <button id="btn-mode-arcade" onclick="switchMode('arcade')" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 text-slate-400 hover:text-white">
+                ⚡ Аркаден режим
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Grid Layout -->
+    <main class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-4 items-start mb-4">
+        
+        <!-- Left Panel: Instructions & Controls -->
+        <section class="lg:col-span-5 flex flex-col gap-4">
+            
+            <!-- Dynamic Info Card -->
+            <div id="info-card" class="bg-cardBg border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
+                <div id="step-badge" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 mb-2">
+                    Стъпка 0 / 5
+                </div>
+                <h2 id="step-title" class="text-lg sm:text-xl font-bold text-white mb-2">
+                    Премахване на числото 1
+                </h2>
+                <p id="step-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+                    Натиснете числото <b>1</b> в таблицата. То НЕ е просто число (няма два различни делителя) и НЕ е съставено.
+                </p>
+
+                <!-- Step Progress Bar -->
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-4">
+                    <div id="progress-bar" class="bg-gradient-to-r from-cyan-400 to-indigo-500 h-full w-[0%] transition-all duration-500"></div>
+                </div>
+
+                <!-- Action Button for Sieve -->
+                <div id="action-container" class="flex flex-col gap-2">
+                    <button id="btn-action" onclick="handleStepAction()" class="w-full py-3 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <span>Започни Стъпка 0</span>
+                    </button>
+                    <button id="btn-auto-fill" onclick="autoCompleteCurrentStep()" class="w-full py-2 px-3 rounded-xl font-semibold text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                        ⚡ Автоматично зачертаване за тази стъпка
+                    </button>
+                </div>
+
+                <!-- Stats View for Arcade Mode (Initially Hidden) -->
+                <div id="arcade-stats" class="hidden flex justify-around items-center p-3 bg-slate-900/80 rounded-xl border border-slate-700/50">
+                    <div class="text-center">
+                        <span class="block text-xs text-slate-400 uppercase tracking-wider font-bold">Точки</span>
+                        <span id="score-val" class="text-2xl font-arcade text-cyan-400">0</span>
+                    </div>
+                    <div class="h-8 w-px bg-slate-700"></div>
+                    <div class="text-center">
+                        <span class="block text-xs text-slate-400 uppercase tracking-wider font-bold">Време</span>
+                        <span id="timer-val" class="text-2xl font-arcade text-amber-400">30s</span>
+                    </div>
+                    <div class="h-8 w-px bg-slate-700"></div>
+                    <div class="text-center">
+                        <span class="block text-xs text-slate-400 uppercase tracking-wider font-bold">Комбо</span>
+                        <span id="combo-val" class="text-2xl font-arcade text-purple-400">x1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legend / Prime Helper Card -->
+            <div class="bg-cardBg/60 border border-slate-800/80 rounded-2xl p-4 text-xs">
+                <h3 class="font-bold text-slate-300 mb-2 flex items-center gap-2">
+                    <span>💡</span> Легенда на цветовете
+                </h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400"></span>
+                        <span class="text-slate-300">Просто 2 (Кратни)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400"></span>
+                        <span class="text-slate-300">Просто 3 (Кратни)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-amber-400 shadow-sm shadow-amber-400"></span>
+                        <span class="text-slate-300">Просто 5 (Кратни)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-purple-400 shadow-sm shadow-purple-400"></span>
+                        <span class="text-slate-300">Просто 7 (Кратни)</span>
+                    </div>
+                    <div class="flex items-center gap-2 col-span-2">
+                        <span class="w-3 h-3 rounded-full bg-yellow-400 shadow-sm shadow-yellow-400"></span>
+                        <span class="text-slate-200 font-bold">Открити прости числа!</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sound & Controls Footer -->
+            <div class="flex items-center justify-between px-2">
+                <button onclick="toggleAudio()" id="btn-sound" class="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition">
+                    <span id="sound-icon">🔊</span> Звуци: <span id="sound-status" class="text-cyan-400">Включени</span>
+                </button>
+                <button onclick="resetCurrentGame()" class="text-xs font-semibold text-slate-400 hover:text-slate-200 underline transition">
+                    🔄 Повтори отначало
+                </button>
+            </div>
+        </section>
+
+        <!-- Right Panel: The 100 Number Grid -->
+        <section class="lg:col-span-7 bg-cardBg border border-slate-800 rounded-2xl p-3 sm:p-5 shadow-2xl">
+            <div id="grid-container" class="grid grid-cols-10 gap-1.5 sm:gap-2 aspect-square w-full max-w-[520px] mx-auto">
+                <!-- 100 Tiles will be generated dynamically -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Victory / Game Over Modal -->
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-cardBg border border-slate-700 max-w-md w-full rounded-3xl p-6 shadow-2xl text-center transform scale-90 transition-transform duration-300" id="modal-card">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 flex items-center justify-center text-4xl shadow-xl shadow-amber-500/20">
+                🏆
+            </div>
+            <h2 id="modal-title" class="text-2xl font-black text-white mb-2">Браво, Математик!</h2>
+            <p id="modal-desc" class="text-sm text-slate-300 mb-6 leading-relaxed">
+                Откри всички 25 прости числа до 100 с помощта на Решетото на Ератостен!
+            </p>
+            <div id="prime-list-box" class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-xs text-amber-300 font-mono mb-6 max-h-32 overflow-y-auto leading-loose text-center">
+                <!-- Prime numbers list will go here -->
+            </div>
+            <button onclick="closeModalAndReset()" class="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-lg transition">
+                Играй отново
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio API Synthesizer (No external sound files required)
+        let audioCtx = null;
+        let audioEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'eliminate') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.12);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            } else if (type === 'primeSelect') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.setValueAtTime(110, now + 0.1);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const noteOsc = audioCtx.createOscillator();
+                    const noteGain = audioCtx.createGain();
+                    noteOsc.connect(noteGain);
+                    noteGain.connect(audioCtx.destination);
+                    noteOsc.type = 'sine';
+                    noteOsc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    noteGain.gain.setValueAtTime(0.2, now + idx * 0.1);
+                    noteGain.gain.linearRampToValueAtTime(0.01, now + idx * 0.1 + 0.3);
+                    noteOsc.start(now + idx * 0.1);
+                    noteOsc.stop(now + idx * 0.1 + 0.3);
+                });
+            }
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            document.getElementById('sound-status').innerText = audioEnabled ? 'Включени' : 'Изключени';
+            document.getElementById('sound-icon').innerText = audioEnabled ? '🔊' : '🔇';
+        }
+
+        const PRIMES_TO_100 = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
+        
+        // Game State Variables
+        let currentMode = 'sieve'; // 'sieve' or 'arcade'
+        let currentStep = 0; // 0 to 5 for Sieve mode
+        let gridData = []; // Array of objects { val, eliminated, primeBase }
+        
+        // Arcade Mode Variables
+        let arcadeScore = 0;
+        let arcadeTimer = 30;
+        let arcadeInterval = null;
+        let arcadeActiveTile = null;
+        let arcadeTimeout = null;
+        let arcadeCombo = 1;
+
+        // Steps definitions for Educational Sieve Mode
+        const SIEVE_STEPS = [
+            {
+                badge: "Стъпка 0 / 5",
+                title: "Зачеркнете числото 1",
+                desc: "Числото 1 има само 1 делител (себе си), затова НЕ е нито просто, нито съставено число. Кликвайте върху 1!",
+                prime: null,
+                multiples: [1],
+                colorClass: "glow-box-blue",
+                btnText: "Кликнете върху числото 1"
+            },
+            {
+                badge: "Стъпка 1 / 5",
+                title: "Простото число 2 и неговите кратни",
+                desc: "Кликнете върху <b>2</b>, за да го отбележите като ПЪРВОТО просто число. След това зачеркнете всички четни числа (4, 6, 8, 10... 100).",
+                prime: 2,
+                multiples: Array.from({length: 49}, (_, i) => (i + 2) * 2),
+                colorClass: "glow-box-blue",
+                styleClass: "prime-2",
+                btnText: "Избери 2 и зачеркни кратните"
+            },
+            {
+                badge: "Стъпка 2 / 5",
+                title: "Простото число 3 и неговите кратни",
+                desc: "Кликнете върху <b>3</b> (следващото просто число). След това зачеркнете останалите кратни на 3 (9, 15, 21, 27... 99).",
+                prime: 3,
+                multiples: Array.from({length: 32}, (_, i) => (i + 2) * 3).filter(n => n <= 100),
+                colorClass: "glow-box-green",
+                styleClass: "prime-3",
+                btnText: "Избери 3 и зачеркни кратните"
+            },
+            {
+                badge: "Стъпка 3 / 5",
+                title: "Простото число 5 и неговите кратни",
+                desc: "Кликнете върху <b>5</b>. Зачеркнете останалите кратни на 5 (завършващи на 0 или 5, като 25, 35, 55, 65, 85, 95).",
+                prime: 5,
+                multiples: Array.from({length: 19}, (_, i) => (i + 2) * 5).filter(n => n <= 100),
+                colorClass: "glow-box-orange",
+                styleClass: "prime-5",
+                btnText: "Избери 5 и зачеркни кратните"
+            },
+            {
+                badge: "Стъпка 4 / 5",
+                title: "Простото число 7 и неговите кратни",
+                desc: "Кликнете върху <b>7</b>. Зачеркнете останалите кратни на 7 (49, 77, 91).",
+                prime: 7,
+                multiples: Array.from({length: 13}, (_, i) => (i + 2) * 7).filter(n => n <= 100),
+                colorClass: "glow-box-purple",
+                styleClass: "prime-7",
+                btnText: "Избери 7 и зачеркни кратните"
+            },
+            {
+                badge: "Финална Стъпка!",
+                title: "Откриване на всички останали прости числа",
+                desc: "Тъй като √100 = 10, всички съставени числа до 100 вече са зачеркнати! Натиснете бутона, за да заблестят останалите прости числа!",
+                prime: null,
+                multiples: [],
+                colorClass: "glow-box-gold",
+                btnText: "✨ Открий останалите прости числа!"
+            }
+        ];
+
+        function initGrid() {
+            const container = document.getElementById('grid-container');
+            container.innerHTML = '';
+            gridData = [];
+
+            for (let i = 1; i <= 100; i++) {
+                gridData.push({
+                    val: i,
+                    eliminated: false,
+                    primeType: null
+                });
+
+                const tile = document.createElement('button');
+                tile.id = `tile-${i}`;
+                tile.className = `tile flex items-center justify-center font-bold text-sm sm:text-base rounded-lg sm:rounded-xl bg-slate-800/90 border border-slate-700/60 text-slate-200 aspect-square cursor-pointer shadow-md`;
+                tile.innerText = i;
+                tile.addEventListener('click', () => handleTileClick(i));
+                container.appendChild(tile);
+            }
+        }
+
+        function switchMode(mode) {
+            playSound('click');
+            currentMode = mode;
+
+            const btnSieve = document.getElementById('btn-mode-sieve');
+            const btnArcade = document.getElementById('btn-mode-arcade');
+            const actionContainer = document.getElementById('action-container');
+            const arcadeStats = document.getElementById('arcade-stats');
+
+            if (mode === 'sieve') {
+                btnSieve.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20";
+                btnArcade.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 text-slate-400 hover:text-white";
+                
+                actionContainer.classList.remove('hidden');
+                arcadeStats.classList.add('hidden');
+                clearInterval(arcadeInterval);
+                clearTimeout(arcadeTimeout);
+
+                resetSieveMode();
+            } else {
+                btnArcade.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20";
+                btnSieve.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 text-slate-400 hover:text-white";
+                
+                actionContainer.classList.add('hidden');
+                arcadeStats.classList.remove('hidden');
+
+                startArcadeMode();
+            }
+        }
+
+        function resetSieveMode() {
+            currentStep = 0;
+            initGrid();
+            updateSieveUI();
+        }
+
+        function updateSieveUI() {
+            const step = SIEVE_STEPS[currentStep];
+            document.getElementById('step-badge').innerText = step.badge;
+            document.getElementById('step-title').innerText = step.title;
+            document.getElementById('step-desc').innerHTML = step.desc;
+            
+            const btn = document.getElementById('btn-action');
+            btn.innerHTML = `<span>${step.btnText}</span>`;
+
+            const infoCard = document.getElementById('info-card');
+            infoCard.className = `bg-cardBg border rounded-2xl p-4 sm:p-5 shadow-xl transition-all duration-300 ${step.colorClass}`;
+
+            const pct = Math.round((currentStep / 5) * 100);
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+
+            const autoBtn = document.getElementById('btn-auto-fill');
+            autoBtn.style.display = (currentStep === 5) ? 'none' : 'block';
+        }
+
+        function handleTileClick(num) {
+            if (currentMode === 'arcade') {
+                handleArcadeTileClick(num);
+                return;
+            }
+
+            // Sieve Educational Logic
+            const step = SIEVE_STEPS[currentStep];
+
+            if (currentStep === 0) {
+                if (num === 1) {
+                    eliminateTile(1);
+                    playSound('eliminate');
+                    nextSieveStep();
+                } else {
+                    shakeTile(num);
+                    playSound('error');
+                }
+                return;
+            }
+
+            if (currentStep >= 1 && currentStep <= 4) {
+                // If prime hasn't been highlighted yet in this step
+                if (num === step.prime && !gridData[num - 1].primeType) {
+                    markTileAsPrime(num, step.styleClass);
+                    playSound('primeSelect');
+                    return;
+                }
+
+                // If user clicks a multiple of the current step prime
+                if (step.multiples.includes(num)) {
+                    if (!gridData[num - 1].eliminated) {
+                        eliminateTile(num);
+                        playSound('eliminate');
+                        checkStepCompletion();
+                    }
+                } else if (num !== step.prime) {
+                    shakeTile(num);
+                    playSound('error');
+                }
+            }
+        }
+
+        function markTileAsPrime(num, styleClass) {
+            gridData[num - 1].primeType = styleClass;
+            const tile = document.getElementById(`tile-${num}`);
+            tile.classList.add(styleClass, 'glow-text-blue');
+        }
+
+        function eliminateTile(num) {
+            gridData[num - 1].eliminated = true;
+            const tile = document.getElementById(`tile-${num}`);
+            tile.classList.add('eliminated');
+        }
+
+        function shakeTile(num) {
+            const tile = document.getElementById(`tile-${num}`);
+            tile.classList.add('shake');
+            setTimeout(() => tile.classList.remove('shake'), 400);
+        }
+
+        function checkStepCompletion() {
+            const step = SIEVE_STEPS[currentStep];
+            const allMultiplesEliminated = step.multiples.every(m => gridData[m - 1].eliminated);
+            const primeMarked = step.prime ? gridData[step.prime - 1].primeType !== null : true;
+
+            if (allMultiplesEliminated && primeMarked) {
+                nextSieveStep();
+            }
+        }
+
+        function handleStepAction() {
+            if (currentStep === 5) {
+                // Final Step: Glow all remaining Primes!
+                revealAllRemainingPrimes();
+                return;
+            }
+
+            // Highlight target prime or auto complete step
+            const step = SIEVE_STEPS[currentStep];
+            if (step.prime && !gridData[step.prime - 1].primeType) {
+                markTileAsPrime(step.prime, step.styleClass);
+                playSound('primeSelect');
+            } else {
+                autoCompleteCurrentStep();
+            }
+        }
+
+        function autoCompleteCurrentStep() {
+            const step = SIEVE_STEPS[currentStep];
+
+            if (currentStep === 0) {
+                eliminateTile(1);
+            } else if (currentStep >= 1 && currentStep <= 4) {
+                if (step.prime) markTileAsPrime(step.prime, step.styleClass);
+                step.multiples.forEach(m => eliminateTile(m));
+            }
+
+            playSound('eliminate');
+            nextSieveStep();
+        }
+
+        function nextSieveStep() {
+            if (currentStep < 5) {
+                currentStep++;
+                updateSieveUI();
+            }
+        }
+
+        function revealAllRemainingPrimes() {
+            let delay = 0;
+            PRIMES_TO_100.forEach((p) => {
+                setTimeout(() => {
+                    const tile = document.getElementById(`tile-${p}`);
+                    tile.className = "tile flex items-center justify-center font-bold text-base rounded-xl aspect-square cursor-pointer prime-final";
+                    playSound('click');
+                }, delay);
+                delay += 50;
+            });
+
+            setTimeout(() => {
+                playSound('win');
+                showVictoryModal();
+            }, delay + 300);
+        }
+
+        function startArcadeMode() {
+            arcadeScore = 0;
+            arcadeTimer = 30;
+            arcadeCombo = 1;
+            updateArcadeStats();
+
+            initGrid();
+            
+            // Enable all tiles for arcade clicking
+            gridData.forEach(item => {
+                const tile = document.getElementById(`tile-${item.val}`);
+                tile.className = "tile flex items-center justify-center font-bold text-sm sm:text-base rounded-xl bg-slate-800/90 border border-slate-700/60 text-slate-200 aspect-square cursor-pointer shadow-md";
+            });
+
+            clearInterval(arcadeInterval);
+            arcadeInterval = setInterval(() => {
+                arcadeTimer--;
+                updateArcadeStats();
+                if (arcadeTimer <= 0) {
+                    endArcadeGame();
+                }
+            }, 1000);
+
+            triggerArcadeFlash();
+        }
+
+        function triggerArcadeFlash() {
+            if (arcadeTimer <= 0 || currentMode !== 'arcade') return;
+
+            // Remove glow from previous
+            if (arcadeActiveTile) {
+                const prev = document.getElementById(`tile-${arcadeActiveTile}`);
+                if (prev) prev.classList.remove('arcade-active');
+            }
+
+            // Pick a random number 1-100
+            const randomNum = Math.floor(Math.random() * 100) + 1;
+            arcadeActiveTile = randomNum;
+
+            const tile = document.getElementById(`tile-${randomNum}`);
+            tile.classList.add('arcade-active');
+            playSound('click');
+
+            // Tile stays active for 1.3 seconds
+            clearTimeout(arcadeTimeout);
+            arcadeTimeout = setTimeout(() => {
+                if (arcadeActiveTile === randomNum) {
+                    tile.classList.remove('arcade-active');
+                    arcadeActiveTile = null;
+                    arcadeCombo = 1; // Reset combo if missed
+                    updateArcadeStats();
+                    triggerArcadeFlash();
+                }
+            }, 1300);
+        }
+
+        function handleArcadeTileClick(num) {
+            if (num !== arcadeActiveTile) return;
+
+            const isPrime = PRIMES_TO_100.includes(num);
+            const tile = document.getElementById(`tile-${num}`);
+
+            tile.classList.remove('arcade-active');
+            clearTimeout(arcadeTimeout);
+            arcadeActiveTile = null;
+
+            if (isPrime) {
+                arcadeScore += 10 * arcadeCombo;
+                arcadeCombo = Math.min(arcadeCombo + 1, 5);
+                tile.classList.add('prime-final');
+                playSound('primeSelect');
+            } else {
+                arcadeScore = Math.max(0, arcadeScore - 5);
+                arcadeCombo = 1;
+                shakeTile(num);
+                playSound('error');
+            }
+
+            updateArcadeStats();
+            setTimeout(triggerArcadeFlash, 300);
+        }
+
+        function updateArcadeStats() {
+            document.getElementById('score-val').innerText = arcadeScore;
+            document.getElementById('timer-val').innerText = `${arcadeTimer}s`;
+            document.getElementById('combo-val').innerText = `x${arcadeCombo}`;
+        }
+
+        function endArcadeGame() {
+            clearInterval(arcadeInterval);
+            clearTimeout(arcadeTimeout);
+            playSound('win');
+
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalTitle = document.getElementById('modal-title');
+            const modalDesc = document.getElementById('modal-desc');
+            const primeBox = document.getElementById('prime-list-box');
+
+            modalTitle.innerText = "Аркадният режим завърши!";
+            modalDesc.innerText = `Постигна невероятен резултат от ${arcadeScore} точки!`;
+            primeBox.innerText = `Твоите точки са запазени. Решетото на Ератостен ти помага да разпознаваш простите числа светкавично!`;
+
+            modalOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                modalOverlay.classList.remove('opacity-0');
+                document.getElementById('modal-card').classList.remove('scale-90');
+            }, 10);
+        }
+
+        function showVictoryModal() {
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalTitle = document.getElementById('modal-title');
+            modalTitle.innerText = "Браво, Математик!";
+            
+            const primeBox = document.getElementById('prime-list-box');
+            primeBox.innerText = PRIMES_TO_100.join(', ');
+
+            modalOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                modalOverlay.classList.remove('opacity-0');
+                document.getElementById('modal-card').classList.remove('scale-90');
+            }, 10);
+        }
+
+        function closeModalAndReset() {
+            const modalOverlay = document.getElementById('modal-overlay');
+            modalOverlay.classList.add('opacity-0');
+            document.getElementById('modal-card').classList.add('scale-90');
+            setTimeout(() => {
+                modalOverlay.classList.add('hidden');
+                resetCurrentGame();
+            }, 300);
+        }
+
+        function resetCurrentGame() {
+            if (currentMode === 'sieve') {
+                resetSieveMode();
+            } else {
+                startArcadeMode();
+            }
+        }
+
+        // Initialize on Load
+        window.onload = function() {
+            initGrid();
+            updateSieveUI();
+        };
+    </script>
+</body>
+</html>
