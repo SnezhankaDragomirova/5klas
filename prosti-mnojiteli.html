@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Разлагане на числа на прости множители</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(229, 231, 235, 0.8);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .step-row:nth-child(even) {
+            background-color: rgba(243, 244, 246, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-800 min-h-screen font-sans bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black text-slate-100 flex flex-col justify-between py-8 px-4 sm:px-6 lg:px-8">
+
+    <div class="max-w-4xl mx-auto w-full space-y-8">
+        
+        <!-- Header Section -->
+        <header class="text-center space-y-3">
+            <div class="inline-flex items-center justify-center p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-indigo-400 mb-2">
+                <i class="fa-solid fa-square-root-variable text-3xl sm:text-4xl"></i>
+            </div>
+            <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+                Разлагане на прости множители
+            </h1>
+            <p class="text-slate-400 max-w-xl mx-auto text-sm sm:text-base">
+                Въведете цяло положително число, за да откриете неговите прости множители, училищен стъпков модел и математически свойства.
+            </p>
+        </header>
+
+        <!-- INPUT CARD -->
+        <section class="glass-card bg-slate-800/80 border-slate-700/60 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+            <form id="factorForm" onsubmit="event.preventDefault(); calculateFactorization();" class="space-y-6">
+                <div>
+                    <label for="numberInput" class="block text-sm font-medium text-slate-300 mb-2">
+                        Число за разлагане ( > 1 ):
+                    </label>
+                    <div class="relative rounded-2xl shadow-sm">
+                        <input 
+                            type="number" 
+                            id="numberInput" 
+                            min="2" 
+                            max="999999999999"
+                            placeholder="Пример: 360" 
+                            required
+                            class="w-full pl-4 pr-32 py-4 bg-slate-950/60 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 rounded-2xl text-xl sm:text-2xl font-bold text-white placeholder-slate-500 transition-all outline-none"
+                        >
+                        <button 
+                            type="submit" 
+                            class="absolute right-2 top-2 bottom-2 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-500/25 active:scale-95 flex items-center gap-2"
+                        >
+                            <span>Разложи</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                    <p id="errorMessage" class="text-rose-400 text-sm mt-2 hidden flex items-center gap-1">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="errorText">Моля, въведете цяло число, по-голямо от 1.</span>
+                    </p>
+                </div>
+
+                <!-- Quick Buttons -->
+                <div>
+                    <span class="text-xs uppercase tracking-wider font-bold text-slate-400 block mb-2">
+                        Бързи примери:
+                    </span>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="setNumber(24)" class="px-3.5 py-1.5 rounded-xl bg-slate-700/50 hover:bg-slate-700 text-slate-200 text-sm font-medium border border-slate-600/50 transition">24</button>
+                        <button type="button" onclick="setNumber(360)" class="px-3.5 py-1.5 rounded-xl bg-slate-700/50 hover:bg-slate-700 text-slate-200 text-sm font-medium border border-slate-600/50 transition">360</button>
+                        <button type="button" onclick="setNumber(1001)" class="px-3.5 py-1.5 rounded-xl bg-slate-700/50 hover:bg-slate-700 text-slate-200 text-sm font-medium border border-slate-600/50 transition">1001</button>
+                        <button type="button" onclick="setNumber(999999)" class="px-3.5 py-1.5 rounded-xl bg-slate-700/50 hover:bg-slate-700 text-slate-200 text-sm font-medium border border-slate-600/50 transition">999 999</button>
+                        <button type="button" onclick="setNumber(1234567)" class="px-3.5 py-1.5 rounded-xl bg-slate-700/50 hover:bg-slate-700 text-slate-200 text-sm font-medium border border-slate-600/50 transition">1 234 567</button>
+                        <button type="button" onclick="setNumber(97)" class="px-3.5 py-1.5 rounded-xl bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-300 text-sm font-medium border border-emerald-700/40 transition">97 (Просто)</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- RESULTS SECTION -->
+        <main id="resultsSection" class="space-y-6 hidden">
+
+            <!-- Prime Number Alert (if applicable) -->
+            <div id="primeBadge" class="hidden p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center gap-3 animate-fade-in">
+                <div class="p-2.5 bg-emerald-500/20 rounded-xl">
+                    <i class="fa-solid fa-award text-emerald-400 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-emerald-200">Числото е просто!</h3>
+                    <p class="text-sm text-emerald-300/80">То се дели единствено на 1 и на себе си.</p>
+                </div>
+            </div>
+
+            <!-- Standard & Power Formats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Power Notation -->
+                <div class="glass-card bg-slate-800/80 border-slate-700/60 rounded-3xl p-6 shadow-lg animate-fade-in">
+                    <div class="flex items-center gap-2 text-indigo-400 text-sm font-semibold uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-superscript"></i>
+                        Като степенен израз
+                    </div>
+                    <div id="powerRepresentation" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wide py-2 break-all">
+                        --
+                    </div>
+                    <p class="text-xs text-slate-400">Компактна форма с използване на степени.</p>
+                </div>
+
+                <!-- Standard Product -->
+                <div class="glass-card bg-slate-800/80 border-slate-700/60 rounded-3xl p-6 shadow-lg animate-fade-in">
+                    <div class="flex items-center gap-2 text-purple-400 text-sm font-semibold uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-calculator"></i>
+                        Стандартно произведение
+                    </div>
+                    <div id="standardRepresentation" class="text-xl sm:text-2xl font-bold text-slate-200 py-2 break-all">
+                        --
+                    </div>
+                    <p class="text-xs text-slate-400">Пълен списък на простите множители.</p>
+                </div>
+            </div>
+
+            <!-- Vertical Factorization Table & Steps -->
+            <div class="glass-card bg-slate-800/80 border-slate-700/60 rounded-3xl p-6 sm:p-8 shadow-xl animate-fade-in">
+                <h3 class="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-list-ol text-indigo-400"></i>
+                    Вертикално разлагане (Стъпка по стъпка)
+                </h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <!-- School Style Table -->
+                    <div class="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 max-w-xs mx-auto w-full">
+                        <div class="grid grid-cols-2 text-center text-xs font-semibold text-slate-400 border-b border-slate-700 pb-2 mb-2">
+                            <span>Делимо</span>
+                            <span>Делител (Просто)</span>
+                        </div>
+                        <div id="schoolTableBody" class="font-mono text-lg space-y-1">
+                            <!-- Filled dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Description Steps -->
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-medium text-slate-400 uppercase tracking-wider">Обяснение на процеса:</h4>
+                        <ol id="textSteps" class="space-y-2 text-sm text-slate-300 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                            <!-- Filled dynamically -->
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROPERTIES GRID -->
+            <div class="glass-card bg-slate-800/80 border-slate-700/60 rounded-3xl p-6 sm:p-8 shadow-xl animate-fade-in">
+                <h3 class="text-lg font-bold text-slate-100 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-pink-400"></i>
+                    Подробни свойства на числото
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <!-- Stat 1 -->
+                    <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+                        <div class="text-xs text-slate-400 font-medium">Общо прости множители</div>
+                        <div id="statTotalFactors" class="text-2xl font-bold text-indigo-400 mt-1">0</div>
+                    </div>
+                    <!-- Stat 2 -->
+                    <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+                        <div class="text-xs text-slate-400 font-medium">Уникални прости множители</div>
+                        <div id="statUniqueFactors" class="text-2xl font-bold text-purple-400 mt-1">0</div>
+                    </div>
+                    <!-- Stat 3 -->
+                    <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+                        <div class="text-xs text-slate-400 font-medium">Общ брой делители</div>
+                        <div id="statTotalDivisors" class="text-2xl font-bold text-pink-400 mt-1">0</div>
+                    </div>
+                    <!-- Stat 4 -->
+                    <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+                        <div class="text-xs text-slate-400 font-medium">Четност / Тип</div>
+                        <div id="statParity" class="text-lg font-bold text-emerald-400 mt-1.5">--</div>
+                    </div>
+                </div>
+
+                <!-- Additional Features -->
+                <div class="space-y-4 pt-4 border-t border-slate-700/50">
+                    <div>
+                        <span class="text-sm font-semibold text-slate-300 block mb-1">Точен квадрат ли е?</span>
+                        <div id="squareStatus" class="text-sm text-slate-400">--</div>
+                    </div>
+
+                    <div>
+                        <span class="text-sm font-semibold text-slate-300 block mb-2">
+                            Всички делители (<span id="divisorsCountLabel">0</span>):
+                        </span>
+                        <div id="allDivisorsList" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 bg-slate-950/50 rounded-2xl border border-slate-800 text-sm font-mono text-indigo-300">
+                            <!-- Filled dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-12 text-center text-xs text-slate-500">
+        <p>Математическо интерактивно приложение за разлагане на прости множители.</p>
+    </footer>
+
+    <script>
+        // Set input value from quick buttons
+        function setNumber(val) {
+            document.getElementById('numberInput').value = val;
+            calculateFactorization();
+        }
+
+        // Main Factorization Logic
+        function calculateFactorization() {
+            const inputEl = document.getElementById('numberInput');
+            const errorEl = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const resultsSec = document.getElementById('resultsSection');
+
+            const num = parseInt(inputEl.value, 10);
+
+            // Validation
+            if (isNaN(num) || num < 2) {
+                errorText.innerText = "Моля, въведете цяло положително число, по-голямо от 1.";
+                errorEl.classList.remove('hidden');
+                resultsSec.classList.add('hidden');
+                return;
+            }
+
+            if (num > 1000000000000) {
+                errorText.innerText = "Моля, въведете по-малко число (до 1 000 000 000 000).";
+                errorEl.classList.remove('hidden');
+                resultsSec.classList.add('hidden');
+                return;
+            }
+
+            errorEl.classList.add('hidden');
+
+            // Algorithm for Prime Factorization
+            let temp = num;
+            const steps = [];
+            const factors = [];
+            const factorCounts = {};
+
+            let d = 2;
+            while (d * d <= temp) {
+                if (temp % d === 0) {
+                    steps.push({ current: temp, divisor: d });
+                    factors.push(d);
+                    factorCounts[d] = (factorCounts[d] || 0) + 1;
+                    temp = temp / d;
+                } else {
+                    d += (d === 2) ? 1 : 2;
+                }
+            }
+            if (temp > 1) {
+                steps.push({ current: temp, divisor: temp });
+                factors.push(temp);
+                factorCounts[temp] = (factorCounts[temp] || 0) + 1;
+            }
+
+            const isPrime = (factors.length === 1);
+
+            // Display Prime Alert
+            const primeBadge = document.getElementById('primeBadge');
+            if (isPrime) {
+                primeBadge.classList.remove('hidden');
+            } else {
+                primeBadge.classList.add('hidden');
+            }
+
+            // 1. Power Representation
+            const powerParts = [];
+            for (const [prime, exp] of Object.entries(factorCounts)) {
+                if (exp > 1) {
+                    powerParts.push(`${prime}<sup>${exp}</sup>`);
+                } else {
+                    powerParts.push(`${prime}`);
+                }
+            }
+            document.getElementById('powerRepresentation').innerHTML = `${num} = ` + powerParts.join(' &times; ');
+
+            // 2. Standard Product Representation
+            document.getElementById('standardRepresentation').innerHTML = `${num} = ` + factors.join(' &times; ');
+
+            // 3. School Vertical Table & Explanations
+            const schoolTableBody = document.getElementById('schoolTableBody');
+            const textSteps = document.getElementById('textSteps');
+            schoolTableBody.innerHTML = '';
+            textSteps.innerHTML = '';
+
+            steps.forEach((step, index) => {
+                // Table Row
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-2 text-center py-1 border-b border-slate-800/60 font-mono';
+                row.innerHTML = `
+                    <span class="text-slate-200">${step.current.toLocaleString('bg-BG')}</span>
+                    <span class="text-indigo-400 font-bold border-l border-slate-700">${step.divisor}</span>
+                `;
+                schoolTableBody.appendChild(row);
+
+                // Step Description
+                const li = document.createElement('li');
+                li.className = 'flex items-start gap-2 bg-slate-900/40 p-2.5 rounded-xl border border-slate-800';
+                li.innerHTML = `
+                    <span class="bg-indigo-500/20 text-indigo-300 text-xs font-bold px-2 py-0.5 rounded-md mt-0.5">${index + 1}</span>
+                    <span>Делим <strong>${step.current.toLocaleString('bg-BG')}</strong> на най-малкия възможен прост делител <strong>${step.divisor}</strong> &rarr; получаваме <strong>${(step.current / step.divisor).toLocaleString('bg-BG')}</strong>.</span>
+                `;
+                textSteps.appendChild(li);
+            });
+
+            // Final '1' in school table
+            const finalRow = document.createElement('div');
+            finalRow.className = 'grid grid-cols-2 text-center py-1 font-mono';
+            finalRow.innerHTML = `
+                <span class="text-emerald-400 font-bold">1</span>
+                <span class="border-l border-slate-700"></span>
+            `;
+            schoolTableBody.appendChild(finalRow);
+
+            // 4. Divisors and Properties
+            const divisors = getAllDivisors(num);
+            
+            document.getElementById('statTotalFactors').innerText = factors.length;
+            document.getElementById('statUniqueFactors').innerText = Object.keys(factorCounts).length;
+            document.getElementById('statTotalDivisors').innerText = divisors.length;
+            document.getElementById('statParity').innerText = (num % 2 === 0) ? 'Четно число' : 'Нечетно число';
+
+            // Square root check
+            const sqrt = Math.sqrt(num);
+            const isPerfectSquare = Number.isInteger(sqrt);
+            document.getElementById('squareStatus').innerHTML = isPerfectSquare
+                ? `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Да, ${num} = ${sqrt}<sup>2</sup></span>`
+                : `<span class="text-slate-400"><i class="fa-solid fa-xmark"></i> Не, числото не е точен квадрат.</span>`;
+
+            // List of all divisors
+            document.getElementById('divisorsCountLabel').innerText = divisors.length;
+            const divisorsContainer = document.getElementById('allDivisorsList');
+            divisorsContainer.innerHTML = '';
+            divisors.forEach(div => {
+                const tag = document.createElement('span');
+                tag.className = 'px-2.5 py-1 bg-slate-900 rounded-lg border border-slate-800 hover:border-indigo-500/50 transition';
+                tag.innerText = div.toLocaleString('bg-BG');
+                divisorsContainer.appendChild(tag);
+            });
+
+            // Show results
+            resultsSec.classList.remove('hidden');
+        }
+
+        // Helper function to find all divisors
+        function getAllDivisors(n) {
+            const divisors = [];
+            for (let i = 1; i * i <= n; i++) {
+                if (n % i === 0) {
+                    divisors.push(i);
+                    if (i * i !== n) {
+                        divisors.push(n / i);
+                    }
+                }
+            }
+            return divisors.sort((a, b) => a - b);
+        }
+
+        // Initial default view
+        window.onload = function() {
+            setNumber(360);
+        };
+    </script>
+</body>
+</html>
