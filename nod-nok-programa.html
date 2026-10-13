@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калкулатор за Най-голям общ делител (НОД)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-calculator text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-none">Математически калкулатор</h1>
+                    <span class="text-xs text-slate-500 font-medium">Алгоритъм на Евклид &bull; НОД и НОК</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Готов за изчисления
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Panel: Input & Settings -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-50 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+
+                    <div class="mb-5">
+                        <h2 class="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                            <span>Въвеждане на данни</span>
+                            <span class="text-brand-600 text-sm font-normal bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">Вход</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">Въведете две или повече цели положителни числа за анализ.</p>
+                    </div>
+
+                    <!-- Input Mode Switcher -->
+                    <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-medium text-slate-600 mb-5">
+                        <button type="button" id="mode-two-btn" onclick="switchMode('two')" class="flex-1 py-1.5 rounded-lg bg-white shadow-xs text-slate-900 font-semibold transition-all">
+                            Две числа
+                        </button>
+                        <button type="button" id="mode-multi-btn" onclick="switchMode('multi')" class="flex-1 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 transition-all">
+                            Множество числа
+                        </button>
+                    </div>
+
+                    <!-- Form: Two Numbers Mode -->
+                    <form id="calc-form" onsubmit="handleCalculate(event)" class="space-y-4">
+                        <div id="two-numbers-container" class="space-y-3.5">
+                            <div>
+                                <label for="num-a" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Първо число (a)</label>
+                                <div class="relative">
+                                    <input type="number" id="num-a" min="1" step="1" placeholder="напр. 252" value="252" required
+                                        class="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm font-semibold transition-all">
+                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">#1</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="num-b" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Второ число (b)</label>
+                                <div class="relative">
+                                    <input type="number" id="num-b" min="1" step="1" placeholder="напр. 105" value="105" required
+                                        class="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm font-semibold transition-all">
+                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">#2</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Multi-Numbers Mode (Hidden by default) -->
+                        <div id="multi-numbers-container" class="space-y-2 hidden">
+                            <label for="numbers-list" class="block text-xs font-semibold uppercase tracking-wider text-slate-600">Списък с числа</label>
+                            <textarea id="numbers-list" rows="3" placeholder="напр. 48, 64, 80 или 120 180 240"
+                                class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm font-semibold transition-all"></textarea>
+                            <p class="text-[11px] text-slate-400">Числата могат да бъдат разделени със запетая, интервал или нов ред.</p>
+                        </div>
+
+                        <!-- Error Message Alert Container -->
+                        <div id="error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                            <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+                            <span id="error-message">Възникна грешка при валидацията.</span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="pt-2 flex gap-2.5">
+                            <button type="submit" class="flex-1 py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-semibold text-sm shadow-md shadow-brand-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer">
+                                <i class="fa-solid fa-play text-xs"></i>
+                                <span>Пресметни</span>
+                            </button>
+                            <button type="button" onclick="loadExample()" class="px-3.5 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-sm font-medium transition-all" title="Зареди пример">
+                                <i class="fa-solid fa-shuffle"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Theory and Explanatory Card -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-sm text-slate-600 space-y-3">
+                    <h3 class="font-bold text-slate-900 flex items-center gap-2 text-xs uppercase tracking-wider">
+                        <i class="fa-solid fa-book-open text-brand-600"></i>
+                        Какво представлява НОД?
+                    </h3>
+                    <p class="text-xs leading-relaxed text-slate-600">
+                        <strong>Най-големият общ делител (НОД)</strong> на две или повече цели числа е най-голямото положително цяло число, което дели всяко от тях без остатък.
+                    </p>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+                        <div class="font-semibold text-slate-700">Алгоритъм на Евклид:</div>
+                        <div class="code-font text-[11px] text-slate-600 bg-white p-2 rounded border border-slate-200">
+                            НОД(a, b) = НОД(b, a mod b)<br>
+                            докато остатъкът стане 0.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Results & Detailed Steps -->
+            <div class="lg:col-span-7 space-y-6">
+                <!-- Main Summary Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- GCD Card -->
+                    <div class="bg-gradient-to-br from-indigo-500 to-brand-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-500/15 relative overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-indigo-100">Най-голям общ делител</span>
+                            <span class="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">НОД (GCD)</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span id="result-gcd" class="text-4xl sm:text-5xl font-extrabold tracking-tight">21</span>
+                        </div>
+                        <p id="result-gcd-desc" class="text-xs text-indigo-100 mt-2 font-medium">за числата 252 и 105</p>
+                    </div>
+
+                    <!-- LCM Card -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Най-малко общо кратно</span>
+                            <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">НОК (LCM)</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span id="result-lcm" class="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">1260</span>
+                        </div>
+                        <p id="result-lcm-desc" class="text-xs text-slate-500 mt-2 font-medium">a &times; b / НОД(a, b)</p>
+                    </div>
+                </div>
+
+                <!-- Step by step breakdown -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+                            <h3 class="font-bold text-slate-900 text-sm tracking-tight">Стъпки на Алгоритъма на Евклид</h3>
+                        </div>
+                        <button type="button" onclick="copyExplanation()" class="text-xs text-slate-500 hover:text-brand-600 font-medium flex items-center gap-1.5 transition-colors">
+                            <i class="fa-regular fa-copy"></i>
+                            <span id="copy-text">Копирай стъпките</span>
+                        </button>
+                    </div>
+
+                    <!-- Steps Timeline / Table -->
+                    <div class="p-6">
+                        <div id="steps-container" class="space-y-4">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+
+                        <!-- Multi-number summary info if more than 2 numbers -->
+                        <div id="multi-process-container" class="mt-6 pt-5 border-t border-slate-100 hidden">
+                            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Обобщение за множество числа</h4>
+                            <div id="multi-steps-list" class="space-y-2 text-xs text-slate-600"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-400">
+            <p>Интерактивен калкулатор за намиране на Най-голям общ делител (НОД) чрез метода на Евклид.</p>
+        </div>
+    </footer>
+
+    <script>
+        // State
+        let currentMode = 'two'; // 'two' or 'multi'
+        let cachedStepsText = '';
+
+        /**
+         * Switch between two numbers mode and multi numbers mode
+         */
+        function switchMode(mode) {
+            currentMode = mode;
+            const twoContainer = document.getElementById('two-numbers-container');
+            const multiContainer = document.getElementById('multi-numbers-container');
+            const twoBtn = document.getElementById('mode-two-btn');
+            const multiBtn = document.getElementById('mode-multi-btn');
+            const errorBox = document.getElementById('error-box');
+
+            errorBox.classList.add('hidden');
+
+            if (mode === 'two') {
+                twoContainer.classList.remove('hidden');
+                multiContainer.classList.add('hidden');
+
+                twoBtn.className = "flex-1 py-1.5 rounded-lg bg-white shadow-xs text-slate-900 font-semibold transition-all";
+                multiBtn.className = "flex-1 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 transition-all";
+            } else {
+                twoContainer.classList.add('hidden');
+                multiContainer.classList.remove('hidden');
+
+                multiBtn.className = "flex-1 py-1.5 rounded-lg bg-white shadow-xs text-slate-900 font-semibold transition-all";
+                twoBtn.className = "flex-1 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 transition-all";
+
+                // Sync current values if possible
+                const a = document.getElementById('num-a').value.trim();
+                const b = document.getElementById('num-b').value.trim();
+                if (a && b && !document.getElementById('numbers-list').value) {
+                    document.getElementById('numbers-list').value = `${a}, ${b}, 42`;
+                }
+            }
+            performCalculation();
+        }
+
+        /**
+         * Euclidean Algorithm with step tracking for two numbers
+         */
+        function getEuclideanSteps(a, b) {
+            let x = Math.abs(a);
+            let y = Math.abs(b);
+            const steps = [];
+
+            if (x < y) {
+                const temp = x;
+                x = y;
+                y = temp;
+            }
+
+            while (y !== 0) {
+                const quotient = Math.floor(x / y);
+                const remainder = x % y;
+                steps.push({
+                    dividend: x,
+                    divisor: y,
+                    quotient: quotient,
+                    remainder: remainder
+                });
+                x = y;
+                y = remainder;
+            }
+
+            return {
+                gcd: x,
+                steps: steps
+            };
+        }
+
+        /**
+         * GCD of two numbers
+         */
+        function gcdTwo(a, b) {
+            let x = Math.abs(a);
+            let y = Math.abs(b);
+            while (y !== 0) {
+                let temp = y;
+                y = x % y;
+                x = temp;
+            }
+            return x;
+        }
+
+        /**
+         * LCM of two numbers
+         */
+        function lcmTwo(a, b) {
+            if (a === 0 || b === 0) return 0;
+            return Math.abs(a * b) / gcdTwo(a, b);
+        }
+
+        /**
+         * Parse integers from text
+         */
+        function parseNumbers(input) {
+            const rawTokens = input.split(/[\s,;]+/);
+            const numbers = [];
+            for (const token of rawTokens) {
+                if (!token) continue;
+                const num = Number(token);
+                if (!Number.isInteger(num) || num <= 0) {
+                    return null;
+                }
+                numbers.push(num);
+            }
+            return numbers;
+        }
+
+        /**
+         * Display error banner
+         */
+        function showError(msg) {
+            const errorBox = document.getElementById('error-box');
+            const errorMsg = document.getElementById('error-message');
+            errorMsg.textContent = msg;
+            errorBox.classList.remove('hidden');
+        }
+
+        /**
+         * Hide error banner
+         */
+        function hideError() {
+            document.getElementById('error-box').classList.add('hidden');
+        }
+
+        /**
+         * Perform calculation and render steps
+         */
+        function performCalculation() {
+            hideError();
+            let numbers = [];
+
+            if (currentMode === 'two') {
+                const valA = Number(document.getElementById('num-a').value);
+                const valB = Number(document.getElementById('num-b').value);
+
+                if (!Number.isInteger(valA) || valA <= 0 || !Number.isInteger(valB) || valB <= 0) {
+                    showError("Моля, въведете валидни цели положителни числа за двете полета.");
+                    return;
+                }
+                numbers = [valA, valB];
+            } else {
+                const raw = document.getElementById('numbers-list').value.trim();
+                if (!raw) {
+                    showError("Моля, въведете поне две цели положителни числа.");
+                    return;
+                }
+                numbers = parseNumbers(raw);
+                if (!numbers || numbers.length < 2) {
+                    showError("Въведете поне две валидни положителни цели числа (напр. 36, 48, 60).");
+                    return;
+                }
+            }
+
+            renderCalculationResults(numbers);
+        }
+
+        /**
+         * Update UI with calculated results
+         */
+        function renderCalculationResults(numbers) {
+            const stepsContainer = document.getElementById('steps-container');
+            const multiProcessContainer = document.getElementById('multi-process-container');
+            const multiStepsList = document.getElementById('multi-steps-list');
+            const gcdResultEl = document.getElementById('result-gcd');
+            const lcmResultEl = document.getElementById('result-lcm');
+            const gcdDescEl = document.getElementById('result-gcd-desc');
+            const lcmDescEl = document.getElementById('result-lcm-desc');
+
+            stepsContainer.innerHTML = '';
+            cachedStepsText = '';
+
+            if (numbers.length === 2) {
+                multiProcessContainer.classList.add('hidden');
+                const [n1, n2] = numbers;
+                const { gcd, steps } = getEuclideanSteps(n1, n2);
+                const lcm = lcmTwo(n1, n2);
+
+                gcdResultEl.textContent = gcd;
+                lcmResultEl.textContent = lcm.toLocaleString('bg-BG');
+                gcdDescEl.textContent = `за ${n1} и ${n2}`;
+                lcmDescEl.textContent = `(${n1} × ${n2}) ÷ ${gcd} = ${lcm}`;
+
+                let plainText = `Намиране на НОД(${n1}, ${n2}) чрез алгоритъм на Евклид:\n`;
+
+                steps.forEach((step, index) => {
+                    const isLast = (index === steps.length - 1);
+                    const stepRow = document.createElement('div');
+                    stepRow.className = `p-4 rounded-xl border ${isLast ? 'border-brand-200 bg-brand-50/50' : 'border-slate-100 bg-slate-50/60'} transition-all`;
+
+                    stepRow.innerHTML = `
+                        <div class="flex items-center justify-between text-xs mb-1.5 font-semibold ${isLast ? 'text-brand-700' : 'text-slate-600'}">
+                            <span>Стъпка ${index + 1}</span>
+                            <span class="text-[11px] ${isLast ? 'bg-brand-100 text-brand-800' : 'bg-slate-200/70 text-slate-600'} px-2 py-0.5 rounded">
+                                ${step.remainder === 0 ? 'Краен остатък 0' : `Остатък: ${step.remainder}`}
+                            </span>
+                        </div>
+                        <div class="code-font text-sm font-semibold text-slate-800">
+                            <span>${step.dividend}</span> = 
+                            <span class="text-indigo-600">${step.divisor}</span> &times; 
+                            <span>${step.quotient}</span> + 
+                            <span class="${isLast ? 'text-emerald-600 font-bold' : 'text-amber-600'}">${step.remainder}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">
+                            ${step.dividend} разделено на ${step.divisor} дава цяло число ${step.quotient} с остатък ${step.remainder}.
+                        </p>
+                    `;
+                    stepsContainer.appendChild(stepRow);
+
+                    plainText += `Стъпка ${index + 1}: ${step.dividend} = ${step.divisor} * ${step.quotient} + ${step.remainder}\n`;
+                });
+
+                plainText += `\nРезултат: НОД(${n1}, ${n2}) = ${gcd}\nНОК(${n1}, ${n2}) = ${lcm}`;
+                cachedStepsText = plainText;
+
+            } else {
+                // Multi-number logic: Iterative reduction
+                multiProcessContainer.classList.remove('hidden');
+                multiStepsList.innerHTML = '';
+
+                let runningGcd = numbers[0];
+                let runningLcm = numbers[0];
+                let multiNotes = [];
+                let plainText = `Намиране на НОД за [${numbers.join(', ')}]:\n`;
+
+                // Calculate the overall GCD and keep trace
+                for (let i = 1; i < numbers.length; i++) {
+                    const prevGcd = runningGcd;
+                    const nextNum = numbers[i];
+                    runningGcd = gcdTwo(runningGcd, nextNum);
+                    runningLcm = lcmTwo(runningLcm, nextNum);
+
+                    multiNotes.push({
+                        stepIndex: i,
+                        prevGcd,
+                        nextNum,
+                        newGcd: runningGcd
+                    });
+                }
+
+                gcdResultEl.textContent = runningGcd;
+                lcmResultEl.textContent = runningLcm.toLocaleString('bg-BG');
+                gcdDescEl.textContent = `за ${numbers.length} числа: ${numbers.slice(0, 3).join(', ')}${numbers.length > 3 ? '...' : ''}`;
+                lcmDescEl.textContent = `за всички въведени числа`;
+
+                // Show step-by-step for the first pair in the main step view
+                const firstPair = getEuclideanSteps(numbers[0], numbers[1]);
+                const headerNotice = document.createElement('div');
+                headerNotice.className = 'text-xs text-slate-500 italic pb-2';
+                headerNotice.textContent = `Първоначална стъпка: Намиране на НОД(${numbers[0]}, ${numbers[1]}) = ${firstPair.gcd}`;
+                stepsContainer.appendChild(headerNotice);
+
+                firstPair.steps.forEach((step, idx) => {
+                    const stepRow = document.createElement('div');
+                    stepRow.className = 'p-3.5 rounded-xl border border-slate-100 bg-slate-50/60';
+                    stepRow.innerHTML = `
+                        <div class="code-font text-xs font-semibold text-slate-800">
+                            ${step.dividend} = ${step.divisor} &times; ${step.quotient} + <span class="text-amber-600">${step.remainder}</span>
+                        </div>
+                    `;
+                    stepsContainer.appendChild(stepRow);
+                });
+
+                // Display consecutive pairs in the multi list
+                multiNotes.forEach(note => {
+                    const row = document.createElement('div');
+                    row.className = 'p-2.5 rounded-lg bg-slate-50 border border-slate-200/60 font-mono text-xs flex justify-between items-center';
+                    row.innerHTML = `
+                        <span>НОД(${note.prevGcd}, ${note.nextNum})</span>
+                        <span class="font-bold text-brand-600">&rarr; ${note.newGcd}</span>
+                    `;
+                    multiStepsList.appendChild(row);
+                    plainText += `НОД(${note.prevGcd}, ${note.nextNum}) = ${note.newGcd}\n`;
+                });
+
+                plainText += `\nКраен резултат:\nНОД: ${runningGcd}\nНОК: ${runningLcm}`;
+                cachedStepsText = plainText;
+            }
+        }
+
+        /**
+         * Load a randomized sample pair or list
+         */
+        function loadExample() {
+            const examplesTwo = [
+                [252, 105],
+                [48, 18],
+                [1071, 462],
+                [315, 210],
+                [144, 96]
+            ];
+            const examplesMulti = [
+                '24, 36, 60',
+                '120, 180, 240, 300',
+                '45, 75, 90',
+                '84, 126, 210'
+            ];
+
+            if (currentMode === 'two') {
+                const choice = examplesTwo[Math.floor(Math.random() * examplesTwo.length)];
+                document.getElementById('num-a').value = choice[0];
+                document.getElementById('num-b').value = choice[1];
+            } else {
+                const choice = examplesMulti[Math.floor(Math.random() * examplesMulti.length)];
+                document.getElementById('numbers-list').value = choice;
+            }
+            performCalculation();
+        }
+
+        /**
+         * Copy explanation steps to clipboard
+         */
+        function copyExplanation() {
+            if (!cachedStepsText) return;
+
+            const tempInput = document.createElement('textarea');
+            tempInput.value = cachedStepsText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+                const copyText = document.getElementById('copy-text');
+                const orig = copyText.textContent;
+                copyText.textContent = "Копирано!";
+                setTimeout(() => {
+                    copyText.textContent = orig;
+                }, 2000);
+            } catch (err) {
+                // Fallback
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        /**
+         * Handle form submit event
+         */
+        function handleCalculate(e) {
+            e.preventDefault();
+            performCalculation();
+        }
+
+        // Initialize default state on load
+        window.onload = function() {
+            performCalculation();
+        };
+    </script>
+</body>
+</html>
